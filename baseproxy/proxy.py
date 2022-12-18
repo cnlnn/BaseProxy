@@ -15,7 +15,7 @@ from socketserver import ThreadingMixIn
 from urllib.parse import urlparse, ParseResult, urlunparse
 from tempfile import gettempdir
 
-from ssl import wrap_socket
+from ssl import SSLContext
 from socket import socket
 from OpenSSL.crypto import load_certificate, FILETYPE_PEM, TYPE_RSA, PKey, X509, X509Extension, dump_privatekey, \
     dump_certificate, load_privatekey, X509Req
@@ -470,7 +470,8 @@ class ProxyHandle(BaseHTTPRequestHandler):
         self._proxy_sock.settimeout(10)
         self._proxy_sock.connect((self.hostname,int(self.port)))
         #进行SSL包裹
-        self._proxy_sock = wrap_socket(self._proxy_sock)
+        self.context = SSLContext()
+        self._proxy_sock = self.context.wrap_socket(self._proxy_sock, server_hostname=self.hostname)
 
 
     def _proxy_to_dst(self):
@@ -502,7 +503,8 @@ class ProxyHandle(BaseHTTPRequestHandler):
             self.end_headers()
 
             #这个时候需要将客户端的socket包装成sslsocket,这个时候的self.path类似www.baidu.com:443，根据域名使用相应的证书
-            self.request = wrap_socket(self.request, server_side=True, certfile=self.server.ca[self.path.split(':')[0]])
+            self.context.load_cert_chain(self.server.ca[self.hostname])
+            self.request = self.context.wrap_socket(self.request, server_side=True)
 
         except Exception as e:
             self.send_error(500, str(e))
