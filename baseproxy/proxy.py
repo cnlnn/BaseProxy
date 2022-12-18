@@ -266,7 +266,8 @@ class Response(HttpTransfer):
             text = data
 
         elif encoding in ('gzip', 'x-gzip'):#gzip压缩
-            text = zlib.decompress(data, 16+zlib.MAX_WBITS)
+            gzip_decompress = zlib.decompressobj(zlib.MAX_WBITS | 16)
+            text = gzip_decompress.decompress(data)
         elif encoding == 'deflate':#zip压缩
             try:
                 text = zlib.decompress(data)
