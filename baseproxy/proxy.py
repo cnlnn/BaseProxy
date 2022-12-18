@@ -4,6 +4,7 @@ import logging
 import os
 import select
 import zlib
+import brotli
 from io import StringIO
 
 import chardet
@@ -253,6 +254,8 @@ class Response(HttpTransfer):
 
         elif encoding == 'deflate':
             data = zlib.compress(text)
+        elif encoding == 'br':
+            data = brotli.compress(text)
         else:
             data = text
 
@@ -269,6 +272,8 @@ class Response(HttpTransfer):
                 text = zlib.decompress(data)
             except zlib.error:
                 text = zlib.decompress(data, -zlib.MAX_WBITS)
+        elif encoding == 'br' and data:
+            text = brotli.decompress(data)
         else:
             text = data
 
